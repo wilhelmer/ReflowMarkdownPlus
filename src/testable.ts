@@ -36,14 +36,16 @@ export interface Settings  {
     preferredLineLength: number,
     doubleSpaceBetweenSentences: boolean,
     resizeHeaderDashLines: boolean,
-    wrapLongLinks: wrapLongLinksOptions
+    wrapLongLinks: wrapLongLinksOptions,
+    neverReflowFirstParagraph: boolean
 }
 
 const DEFAULTSETTINGS : Settings = {
     preferredLineLength: 80,
     doubleSpaceBetweenSentences: false,
     resizeHeaderDashLines: true,
-    wrapLongLinks: wrapLongLinksOptions.wrap
+    wrapLongLinks: wrapLongLinksOptions.wrap,
+    neverReflowFirstParagraph: false
 };
 
 export function wordIsLink(word: string) {
@@ -440,7 +442,8 @@ export function getSettings(wsConfig?: WorkspaceConfiguration): Settings {
             preferredLineLength: wsConfig.get("preferredLineLength", DEFAULTSETTINGS.preferredLineLength),
             doubleSpaceBetweenSentences: wsConfig.get("doubleSpaceBetweenSentences", DEFAULTSETTINGS.doubleSpaceBetweenSentences),
             resizeHeaderDashLines: wsConfig.get("resizeHeaderDashLines", DEFAULTSETTINGS.resizeHeaderDashLines),
-            wrapLongLinks: wsConfig.get("wrapLongLinks", DEFAULTSETTINGS.wrapLongLinks)
+            wrapLongLinks: wsConfig.get("wrapLongLinks", DEFAULTSETTINGS.wrapLongLinks),
+            neverReflowFirstParagraph: wsConfig.get("neverReflowFirstParagraph", DEFAULTSETTINGS.neverReflowFirstParagraph)
         };
     } else {
         return DEFAULTSETTINGS;

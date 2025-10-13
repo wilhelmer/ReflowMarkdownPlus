@@ -51,6 +51,31 @@ function paragraphHasMdxImport(document: vscode.TextDocument, startLine: number,
   return false;
 }
 
+// Compute the first content paragraph range (after front matter, blank lines, and MDX imports)
+function getFirstContentParagraphRange(document: vscode.TextDocument): vscode.Range | undefined {
+  const fm = getFrontMatterRange(document);
+  const lineCount = document.lineCount;
+  let i = fm ? fm.end.line + 1 : 0;
+
+  // skip blank lines and MDX import lines
+  while (i < lineCount) {
+    const t = document.lineAt(i).text;
+    if (t.trim() === "" || MDX_IMPORT_RE.test(t)) {
+      i++;
+      continue;
+    }
+    break;
+  }
+  if (i >= lineCount) return undefined;
+
+  const lineAtFunc = (line: number) => document.lineAt(line);
+  const midLine = document.lineAt(i);
+  const o = new OtherInfo();
+  const s = getStartLine(lineAtFunc, midLine);
+  const e = getEndLine(lineAtFunc, midLine, lineCount - 1, o);
+  return new vscode.Range(s.lineNumber, 0, e.lineNumber, document.lineAt(e.lineNumber).text.length);
+}
+
 export function reflow() {
   let editor = vscode.window.activeTextEditor;
   if (!editor) {
@@ -77,6 +102,18 @@ export function reflow() {
   // Skip paragraphs that contain MDX import statements
   if (paragraphHasMdxImport(editor.document, sei.lineStart, sei.lineEnd)) {
     return;
+  }
+
+  // Skip first paragraph if configured
+  if (settings.neverReflowFirstParagraph) {
+    const firstPara = getFirstContentParagraphRange(editor.document);
+    if (firstPara) {
+      const firstStart = firstPara.start.line;
+      const firstEnd = firstPara.end.line;
+      if (!(sei.lineEnd < firstStart || sei.lineStart > firstEnd)) {
+        return;
+      }
+    }
   }
 
   let len = editor.document.lineAt(sei.lineEnd).text.length;
@@ -174,6 +211,19 @@ function computeReflowEdits(
     if (paragraphHasMdxImport(document, sei.lineStart, sei.lineEnd)) {
       i = sei.lineEnd + 1;
       continue;
+    }
+
+    // Skip first paragraph if configured
+    if (settings.neverReflowFirstParagraph) {
+      const firstPara = getFirstContentParagraphRange(document);
+      if (firstPara) {
+        const firstStart = firstPara.start.line;
+        const firstEnd = firstPara.end.line;
+        if (!(sei.lineEnd < firstStart || sei.lineStart > firstEnd)) {
+          i = sei.lineEnd + 1;
+          continue;
+        }
+      }
     }
 
     // For range formatting: skip paragraphs outside or crossing the selection
