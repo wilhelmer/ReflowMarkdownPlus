@@ -27,7 +27,9 @@
     "color": "#000000",
     "theme": "dark"
   },
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
@@ -75,9 +77,14 @@
       {
         "command": "reflow-markdown.reflowMarkdown",
         "key": "alt+q",
-        "when": "editorTextFocus"
+        "when": "editorTextFocus && editorLangId == 'markdown'"
       }
-    ]
+    ],
+    "configurationDefaults": {
+      "[markdown]": {
+        "editor.defaultFormatter": "marvhen.reflow-markdown"
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
