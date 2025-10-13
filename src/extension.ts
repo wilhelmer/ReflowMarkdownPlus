@@ -82,6 +82,17 @@ function lineStartsWithTripleColon(text: string): boolean {
   return TRIPLE_COLON_RE.test(text);
 }
 
+// Helper: Markdown footnote or reference definition lines, e.g. `[tags]: /path` or `[^1]: text`
+const FOOTNOTE_DEF_RE = /^\s*\[\^?[^\]]+\]:[ \t]+/;
+function paragraphHasFootnoteDef(document: vscode.TextDocument, startLine: number, endLine: number): boolean {
+  for (let i = startLine; i <= endLine; i++) {
+    if (FOOTNOTE_DEF_RE.test(document.lineAt(i).text)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function reflow() {
   let editor = vscode.window.activeTextEditor;
   if (!editor) {
@@ -107,6 +118,11 @@ export function reflow() {
 
   // Skip paragraphs that contain MDX import statements
   if (paragraphHasMdxImport(editor.document, sei.lineStart, sei.lineEnd)) {
+    return;
+  }
+
+  // Skip paragraphs that contain Markdown footnote/reference definitions
+  if (paragraphHasFootnoteDef(editor.document, sei.lineStart, sei.lineEnd)) {
     return;
   }
 
@@ -220,6 +236,12 @@ function computeReflowEdits(
 
     // Skip paragraphs that contain MDX import statements
     if (paragraphHasMdxImport(document, sei.lineStart, sei.lineEnd)) {
+      i = sei.lineEnd + 1;
+      continue;
+    }
+
+    // Skip paragraphs that contain Markdown footnote/reference definitions
+    if (paragraphHasFootnoteDef(document, sei.lineStart, sei.lineEnd)) {
       i = sei.lineEnd + 1;
       continue;
     }
