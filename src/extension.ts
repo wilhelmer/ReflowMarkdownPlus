@@ -100,7 +100,7 @@ function paragraphHasFootnoteDef(document: vscode.TextDocument, startLine: numbe
 }
 
 // Helper: lines that only contain a list symbol (- or *) and a Markdown link
-const LIST_LINK_ONLY_RE = /^\s*[-*]\s+\[[^\]]*\]\([^)]*\)\s*$/;
+const LIST_LINK_ONLY_RE = /^\s*[-*]\s+\[[^\]]*\]\([^)]*\)\.?\s*$/;
 function paragraphHasListLinkOnly(document: vscode.TextDocument, startLine: number, endLine: number): boolean {
   for (let i = startLine; i <= endLine; i++) {
     if (LIST_LINK_ONLY_RE.test(document.lineAt(i).text)) {

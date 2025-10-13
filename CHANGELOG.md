@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.0.2
+-----
+
+- Slightly improve handling of lines that only include a list item with a link.
+
 1.0.1
 -----
 
