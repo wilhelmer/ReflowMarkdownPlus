@@ -106,6 +106,143 @@ function paragraphHasMarkdownTable(document: vscode.TextDocument, startLine: num
   return false;
 }
 
+// Helper: ATX heading lines starting with up to 3 spaces and 1-6 '#'
+const ATX_HEADING_RE = /^\s{0,3}#{1,6}(?:\s|$)/;
+function paragraphHasAtxHeading(document: vscode.TextDocument, startLine: number, endLine: number): boolean {
+  for (let i = startLine; i <= endLine; i++) {
+    if (ATX_HEADING_RE.test(document.lineAt(i).text)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Helper: detect fenced code block ranges (``` or ~~~), allowing up to 3 leading spaces
+function getFencedCodeBlockRanges(document: vscode.TextDocument): vscode.Range[] {
+  const ranges: vscode.Range[] = [];
+  const openRe = /^\s{0,3}(`{3,}|~{3,})/;
+  let inBlock = false;
+  let blockStart = 0;
+  let fenceChar = "";
+  let fenceLen = 0;
+
+  for (let i = 0; i < document.lineCount; i++) {
+    const text = document.lineAt(i).text;
+
+    if (!inBlock) {
+      const m = text.match(openRe);
+      if (m) {
+        const seq = m[1];
+        fenceChar = seq[0]; // ` or ~
+        fenceLen = seq.length;
+        inBlock = true;
+        blockStart = i;
+      }
+      continue;
+    }
+
+    // in block -> look for matching closing fence (same char, at least same length)
+    const closeRe = new RegExp(`^\\s{0,3}${fenceChar}{${fenceLen},}\\s*$`);
+    if (closeRe.test(text)) {
+      const endLen = document.lineAt(i).text.length;
+      ranges.push(new vscode.Range(blockStart, 0, i, endLen));
+      inBlock = false;
+      fenceChar = "";
+      fenceLen = 0;
+    }
+  }
+
+  if (inBlock) {
+    // Unterminated fence until EOF
+    const last = document.lineCount - 1;
+    ranges.push(new vscode.Range(blockStart, 0, last, document.lineAt(last).text.length));
+  }
+
+  return ranges;
+}
+
+// Helper: given a set of ranges, find one that contains a line
+function findRangeContainingLine(ranges: vscode.Range[], line: number): vscode.Range | undefined {
+  return ranges.find(r => line >= r.start.line && line <= r.end.line);
+}
+
+function rangeOverlapsAny(startLine: number, endLine: number, ranges: vscode.Range[]): boolean {
+  return ranges.some(r => !(endLine < r.start.line || startLine > r.end.line));
+}
+
+// Helper: detect MDX/JSX expression ranges delimited by balanced { ... } across lines (outside fenced code)
+function getJsxExpressionRanges(document: vscode.TextDocument, fencedRanges: vscode.Range[]): vscode.Range[] {
+  const ranges: vscode.Range[] = [];
+  let depth = 0;
+  let currentStart: number | undefined = undefined;
+
+  const isInFence = (line: number) => !!findRangeContainingLine(fencedRanges, line);
+
+  for (let i = 0; i < document.lineCount; i++) {
+    const text = document.lineAt(i).text;
+
+    if (isInFence(i)) {
+      // If we were inside an expression range, close it before skipping fenced content
+      if (currentStart !== undefined) {
+        ranges.push(new vscode.Range(currentStart, 0, i - 1, document.lineAt(i - 1).text.length));
+        currentStart = undefined;
+      }
+      continue;
+    }
+
+    // Scan the line while ignoring inline code spans delimited by backticks
+    let inInline = false;
+    let inlineTickRun = 0; // number of backticks that opened the inline span
+    let lineInside = depth > 0;
+
+    for (let idx = 0; idx < text.length; idx++) {
+      const ch = text[idx];
+
+      if (ch === '`') {
+        // Count run length
+        let run = 1;
+        while (idx + run < text.length && text[idx + run] === '`') run++;
+        if (!inInline) {
+          inInline = true;
+          inlineTickRun = run;
+        } else if (run >= inlineTickRun) {
+          inInline = false;
+          inlineTickRun = 0;
+        }
+        idx += run - 1; // advance
+        continue;
+      }
+
+      if (inInline) continue;
+
+      if (ch === '{') {
+        depth++;
+        lineInside = true; // entering expression on this line
+      } else if (ch === '}') {
+        depth = Math.max(0, depth - 1);
+      }
+    }
+
+    if (lineInside) {
+      if (currentStart === undefined) {
+        currentStart = i;
+      }
+    } else if (currentStart !== undefined) {
+      // Previous range ended on the previous line
+      const prev = i - 1;
+      ranges.push(new vscode.Range(currentStart, 0, prev, document.lineAt(prev).text.length));
+      currentStart = undefined;
+    }
+  }
+
+  if (currentStart !== undefined) {
+    const last = document.lineCount - 1;
+    ranges.push(new vscode.Range(currentStart, 0, last, document.lineAt(last).text.length));
+  }
+
+  return ranges;
+}
+
 export function reflow() {
   let editor = vscode.window.activeTextEditor;
   if (!editor) {
@@ -120,12 +257,34 @@ export function reflow() {
     return; // do nothing in front matter
   }
 
+  // Skip when inside fenced code block or JSX expression
+  const fenced = getFencedCodeBlockRanges(editor.document);
+  const jsxExpr = getJsxExpressionRanges(editor.document, fenced);
+  if (findRangeContainingLine(fenced, position.line) || findRangeContainingLine(jsxExpr, position.line)) {
+    return;
+  }
+
+  // Skip when on a heading line
+  if (ATX_HEADING_RE.test(editor.document.lineAt(position.line).text)) {
+    return;
+  }
+
   let settings = getSettings(vscode.workspace.getConfiguration("reflowMarkdown"));
   const selection = editor.selection;
   let sei = GetStartEndInfo(editor);
 
   // If the computed paragraph would overlap front matter, skip
   if (fm && !(sei.lineEnd < fm.start.line || sei.lineStart > fm.end.line)) {
+    return;
+  }
+
+  // Skip paragraphs that overlap fenced code blocks or JSX expressions
+  if (rangeOverlapsAny(sei.lineStart, sei.lineEnd, fenced) || rangeOverlapsAny(sei.lineStart, sei.lineEnd, jsxExpr)) {
+    return;
+  }
+
+  // Skip paragraphs that include ATX headings (lines starting with '#')
+  if (paragraphHasAtxHeading(editor.document, sei.lineStart, sei.lineEnd)) {
     return;
   }
 
@@ -212,6 +371,8 @@ function computeReflowEdits(
 ): vscode.TextEdit[] {
   const edits: vscode.TextEdit[] = [];
   const fm = getFrontMatterRange(document);
+  const fenced = getFencedCodeBlockRanges(document);
+  const jsxExpr = getJsxExpressionRanges(document, fenced);
 
   const hasRange = !!targetRange;
   const startLine = hasRange ? targetRange!.start.line : 0;
@@ -234,6 +395,20 @@ function computeReflowEdits(
       continue;
     }
 
+    // Skip lines inside fenced code blocks
+    const fencedRange = findRangeContainingLine(fenced, i);
+    if (fencedRange) {
+      i = fencedRange.end.line + 1;
+      continue;
+    }
+
+    // Skip lines inside JSX expression ranges
+    const jsxRange = findRangeContainingLine(jsxExpr, i);
+    if (jsxRange) {
+      i = jsxRange.end.line + 1;
+      continue;
+    }
+
     const midLine = document.lineAt(i);
     const o = new OtherInfo();
     const s = getStartLine(lineAtFunc, midLine);
@@ -249,6 +424,18 @@ function computeReflowEdits(
     // Skip if paragraph overlaps front matter
     if (fm && !(sei.lineEnd < fm.start.line || sei.lineStart > fm.end.line)) {
       i = Math.max(i, fm.end.line + 1);
+      continue;
+    }
+
+    // Skip if paragraph overlaps fenced code or JSX expressions
+    if (rangeOverlapsAny(sei.lineStart, sei.lineEnd, fenced) || rangeOverlapsAny(sei.lineStart, sei.lineEnd, jsxExpr)) {
+      i = sei.lineEnd + 1;
+      continue;
+    }
+
+    // Skip paragraphs that include ATX headings (lines starting with '#')
+    if (paragraphHasAtxHeading(document, sei.lineStart, sei.lineEnd)) {
+      i = sei.lineEnd + 1;
       continue;
     }
 
@@ -330,7 +517,7 @@ export function GetStartEndInfo(editor: vscode.TextEditor): StartEndInfo {
     return  {
         lineStart: s.lineNumber,
         lineEnd: e.lineNumber,
-        otherInfo: o        
+        otherInfo: o
     };
 
 }
