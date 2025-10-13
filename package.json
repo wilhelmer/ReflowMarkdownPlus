@@ -1,9 +1,9 @@
 {
-  "name": "reflow-markdown",
-  "displayName": "Reflow Markdown",
-  "description": "Format lines in markdown headers, paragraphs, blockquotes, lists, etc. to a preferred line-length.",
-  "version": "3.1.0",
-  "publisher": "marvhen",
+  "name": "reflow-markdown-plus",
+  "displayName": "Reflow Markdown Plus",
+  "description": "Enforces a consistent line length in Markdown files.",
+  "version": "1.0.0",
+  "publisher": "wilhelmer",
   "icon": "img/logo.png",
   "license": "MIT",
   "engines": {
@@ -21,7 +21,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/marvhen/reflowmarkdown"
+    "url": "https://github.com/wilhelmer/reflowmarkdownplus"
   },
   "galleryBanner": {
     "color": "#000000",
@@ -34,7 +34,7 @@
   "contributes": {
     "configuration": {
       "type": "object",
-      "title": "Reflow Markdown configuration",
+      "title": "Reflow Markdown Plus configuration",
       "properties": {
         "reflowMarkdown.preferredLineLength": {
           "type": "number",
@@ -87,7 +87,7 @@
     ],
     "configurationDefaults": {
       "[markdown]": {
-        "editor.defaultFormatter": "marvhen.reflow-markdown"
+        "editor.defaultFormatter": "wilhelmer.reflow-markdown"
       }
     }
   },
