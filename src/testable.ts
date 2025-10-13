@@ -311,6 +311,11 @@ export function getStartLine(lineAtFunc: (line: number) => TextLine, midLine: Te
         return midLine;
     }
 
+    // If the current line starts with ':::', it is a start line
+    if (isTripleColonFence(midLine.text)) {
+        return midLine;
+    }
+
     // If the current line is an empty blockquote line, it is a start line
     if (isEmptyBlockQuote(midLine.text)) {
         return midLine;
@@ -329,6 +334,11 @@ export function getStartLine(lineAtFunc: (line: number) => TextLine, midLine: Te
 
     // If the prev line is empty, this line is the start
     if (prevLine.isEmptyOrWhitespace) {
+        return midLine;
+    }
+
+    // If the prev line is a ':::' fence, this line is the start
+    if (isTripleColonFence(prevLine.text)) {
         return midLine;
     }
 
@@ -375,6 +385,11 @@ export function getEndLine(lineAtFunc: (line: number) => TextLine, midLine: Text
         return midLine;
     }
 
+    // If the current line starts with ':::', it is an end point
+    if (isTripleColonFence(midLine.text)) {
+        return midLine;
+    }
+
     // If the current line is an empty blockquote line, it is an end point
     if (isEmptyBlockQuote(midLine.text)) {
         return midLine;
@@ -400,6 +415,11 @@ export function getEndLine(lineAtFunc: (line: number) => TextLine, midLine: Text
 
     // if the next line is empty, this line is the end
     if (nextLine.isEmptyOrWhitespace) {
+        return midLine;
+    }
+
+    // If the next line is a ':::' fence, this line is the end
+    if (isTripleColonFence(nextLine.text)) {
         return midLine;
     }
 
@@ -448,4 +468,9 @@ export function getSettings(wsConfig?: WorkspaceConfiguration): Settings {
     } else {
         return DEFAULTSETTINGS;
     }
+}
+
+// Recognize MDX/admonition-style fences that start with ':::'
+export function isTripleColonFence(text: string): boolean {
+    return /^\s*:::/.test(text);
 }

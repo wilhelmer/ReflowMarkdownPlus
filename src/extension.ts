@@ -76,6 +76,12 @@ function getFirstContentParagraphRange(document: vscode.TextDocument): vscode.Ra
   return new vscode.Range(s.lineNumber, 0, e.lineNumber, document.lineAt(e.lineNumber).text.length);
 }
 
+// Helper: lines starting with ':::'
+const TRIPLE_COLON_RE = /^\s*:::/;
+function lineStartsWithTripleColon(text: string): boolean {
+  return TRIPLE_COLON_RE.test(text);
+}
+
 export function reflow() {
   let editor = vscode.window.activeTextEditor;
   if (!editor) {
@@ -114,6 +120,11 @@ export function reflow() {
         return;
       }
     }
+  }
+
+  // Do not touch standalone ':::' lines
+  if (sei.lineStart === sei.lineEnd && lineStartsWithTripleColon(editor.document.lineAt(sei.lineStart).text)) {
+    return;
   }
 
   let len = editor.document.lineAt(sei.lineEnd).text.length;
@@ -224,6 +235,12 @@ function computeReflowEdits(
           continue;
         }
       }
+    }
+
+    // Do not touch standalone ':::' lines
+    if (sei.lineStart === sei.lineEnd && lineStartsWithTripleColon(document.lineAt(sei.lineStart).text)) {
+      i = sei.lineEnd + 1;
+      continue;
     }
 
     // For range formatting: skip paragraphs outside or crossing the selection
