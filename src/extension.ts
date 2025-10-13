@@ -93,6 +93,17 @@ function paragraphHasFootnoteDef(document: vscode.TextDocument, startLine: numbe
   return false;
 }
 
+// Helper: lines that only contain a list symbol (- or *) and a Markdown link
+const LIST_LINK_ONLY_RE = /^\s*[-*]\s+\[[^\]]*\]\([^)]*\)\s*$/;
+function paragraphHasListLinkOnly(document: vscode.TextDocument, startLine: number, endLine: number): boolean {
+  for (let i = startLine; i <= endLine; i++) {
+    if (LIST_LINK_ONLY_RE.test(document.lineAt(i).text)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // Helper: Markdown table detection (pipe rows and header separator lines)
 const MD_TABLE_SEPARATOR_RE = /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/;
 const MD_TABLE_ROW_RE = /^\s*\|.*\|.*$/;
@@ -303,6 +314,11 @@ export function reflow() {
     return;
   }
 
+  // Skip paragraphs that contain only list symbols and Markdown links
+  if (paragraphHasListLinkOnly(editor.document, sei.lineStart, sei.lineEnd)) {
+    return;
+  }
+
   // Skip first paragraph if configured
   if (settings.neverReflowFirstParagraph) {
     const firstPara = getFirstContentParagraphRange(editor.document);
@@ -453,6 +469,12 @@ function computeReflowEdits(
 
     // Skip paragraphs that contain Markdown tables
     if (paragraphHasMarkdownTable(document, sei.lineStart, sei.lineEnd)) {
+      i = sei.lineEnd + 1;
+      continue;
+    }
+
+    // Skip paragraphs that contain only list symbols and Markdown links
+    if (paragraphHasListLinkOnly(document, sei.lineStart, sei.lineEnd)) {
       i = sei.lineEnd + 1;
       continue;
     }
