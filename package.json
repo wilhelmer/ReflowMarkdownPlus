@@ -64,6 +64,11 @@
             "The link text and the link url are started on the next line, which itself may be longer than the preferrd length.",
             "The link text and the link url are kept on the current line, resulting in it being longer than the preferred length."
           ]
+        },
+        "reflowMarkdown.neverReflowFirstParagraph": {
+          "type": "boolean",
+          "default": false,
+          "description": "Never reflow the first paragraph of a document."
         }
       }
     },

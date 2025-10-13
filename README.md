@@ -33,7 +33,10 @@ This extension contributes the following settings:
 
 - `reflowMarkdown.wrapLongLinks`: Specifies how links will be wrapped when they
   cause a line to extend beyond the preferred length.
-  
+
+- `reflowMarkdown.neverReflowFirstParagraph`: Never reflow the first paragraph of a
+  document (default `false`).
+
 Keyboard Shortcuts
 ------------------
 
