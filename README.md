@@ -11,7 +11,7 @@ It includes all features of the original extension, **plus**:
   Markdown files on save.
 - Adds an option to never reflow the first paragraph of a document.
 - Ignores Markdown headings, tables, code blocks, footnotes, and YAML front matter.
-- Properly handles Docusaurus admonitions (`:::`).
+- Properly handles Docusaurus admonitions (`:::`) and import statements.
 
 This extension defaults to reflowing lines to be no more than 80 characters long. The
 preferred line length may be overridden using the config value of
