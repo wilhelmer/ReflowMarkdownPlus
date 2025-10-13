@@ -93,6 +93,19 @@ function paragraphHasFootnoteDef(document: vscode.TextDocument, startLine: numbe
   return false;
 }
 
+// Helper: Markdown table detection (pipe rows and header separator lines)
+const MD_TABLE_SEPARATOR_RE = /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/;
+const MD_TABLE_ROW_RE = /^\s*\|.*\|.*$/;
+function paragraphHasMarkdownTable(document: vscode.TextDocument, startLine: number, endLine: number): boolean {
+  for (let i = startLine; i <= endLine; i++) {
+    const t = document.lineAt(i).text;
+    if (MD_TABLE_SEPARATOR_RE.test(t) || MD_TABLE_ROW_RE.test(t)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function reflow() {
   let editor = vscode.window.activeTextEditor;
   if (!editor) {
@@ -123,6 +136,11 @@ export function reflow() {
 
   // Skip paragraphs that contain Markdown footnote/reference definitions
   if (paragraphHasFootnoteDef(editor.document, sei.lineStart, sei.lineEnd)) {
+    return;
+  }
+
+  // Skip paragraphs that contain Markdown tables
+  if (paragraphHasMarkdownTable(editor.document, sei.lineStart, sei.lineEnd)) {
     return;
   }
 
@@ -242,6 +260,12 @@ function computeReflowEdits(
 
     // Skip paragraphs that contain Markdown footnote/reference definitions
     if (paragraphHasFootnoteDef(document, sei.lineStart, sei.lineEnd)) {
+      i = sei.lineEnd + 1;
+      continue;
+    }
+
+    // Skip paragraphs that contain Markdown tables
+    if (paragraphHasMarkdownTable(document, sei.lineStart, sei.lineEnd)) {
       i = sei.lineEnd + 1;
       continue;
     }
