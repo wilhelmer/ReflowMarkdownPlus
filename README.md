@@ -25,7 +25,7 @@ workspace settings:
 
 ```json
 "[markdown]": {
-    "editor.defaultFormatter": "wilhelmer.reflow-markdown-plus",
+    "editor.defaultFormatter": "lwilhelmer.reflow-markdown-plus",
     "editor.formatOnSave": true
 }
 ```

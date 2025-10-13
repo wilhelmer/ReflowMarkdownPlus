@@ -3,7 +3,7 @@
   "displayName": "Reflow Markdown Plus",
   "description": "Enforces a consistent line length in Markdown files.",
   "version": "1.0.0",
-  "publisher": "wilhelmer",
+  "publisher": "lwilhelmer",
   "icon": "img/logo.png",
   "license": "MIT",
   "engines": {
@@ -87,7 +87,7 @@
     ],
     "configurationDefaults": {
       "[markdown]": {
-        "editor.defaultFormatter": "wilhelmer.reflow-markdown"
+        "editor.defaultFormatter": "lwilhelmer.reflow-markdown-plus"
       }
     }
   },
