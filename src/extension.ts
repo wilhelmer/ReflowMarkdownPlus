@@ -82,6 +82,12 @@ function lineStartsWithTripleColon(text: string): boolean {
   return TRIPLE_COLON_RE.test(text);
 }
 
+// Helper: lines that only contain an opening or closing XML tag
+const XML_TAG_ONLY_RE = /^\s*<\/?[a-zA-Z][a-zA-Z0-9\-]*(?:\s[^>]*)?\/?>\s*$/;
+function lineIsXmlTagOnly(text: string): boolean {
+  return XML_TAG_ONLY_RE.test(text);
+}
+
 // Helper: Markdown footnote or reference definition lines, e.g. `[tags]: /path` or `[^1]: text`
 const FOOTNOTE_DEF_RE = /^\s*\[\^?[^\]]+\]:[ \t]+/;
 function paragraphHasFootnoteDef(document: vscode.TextDocument, startLine: number, endLine: number): boolean {
@@ -336,6 +342,11 @@ export function reflow() {
     return;
   }
 
+  // Do not touch lines that only contain XML tags
+  if (sei.lineStart === sei.lineEnd && lineIsXmlTagOnly(editor.document.lineAt(sei.lineStart).text)) {
+    return;
+  }
+
   let len = editor.document.lineAt(sei.lineEnd).text.length;
   let range = new vscode.Range(sei.lineStart, 0, sei.lineEnd, len);
   let text = editor.document.getText(range);
@@ -494,6 +505,12 @@ function computeReflowEdits(
 
     // Do not touch standalone ':::' lines
     if (sei.lineStart === sei.lineEnd && lineStartsWithTripleColon(document.lineAt(sei.lineStart).text)) {
+      i = sei.lineEnd + 1;
+      continue;
+    }
+
+    // Do not touch lines that only contain XML tags
+    if (sei.lineStart === sei.lineEnd && lineIsXmlTagOnly(document.lineAt(sei.lineStart).text)) {
       i = sei.lineEnd + 1;
       continue;
     }

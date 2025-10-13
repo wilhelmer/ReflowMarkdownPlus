@@ -2,7 +2,7 @@
   "name": "reflow-markdown-plus",
   "displayName": "Reflow Markdown Plus",
   "description": "Enforces a consistent line length in Markdown files.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "lwilhelmer",
   "icon": "img/logo.png",
   "license": "MIT",
@@ -34,7 +34,7 @@
   "contributes": {
     "configuration": {
       "type": "object",
-      "title": "Reflow Markdown Plus configuration",
+      "title": "Reflow Markdown Plus",
       "properties": {
         "reflowMarkdown.preferredLineLength": {
           "type": "number",

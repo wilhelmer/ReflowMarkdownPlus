@@ -1,5 +1,11 @@
-Change Log
-==========
+Changelog
+=========
+
+1.0.1
+-----
+
+- Disable reflowing lines that only include XML tags.
+
 
 1.0.0
 -----

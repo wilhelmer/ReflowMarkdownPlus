@@ -316,6 +316,11 @@ export function getStartLine(lineAtFunc: (line: number) => TextLine, midLine: Te
         return midLine;
     }
 
+    // If the current line only contains an XML tag, it is a start line
+    if (isXmlTagOnly(midLine.text)) {
+        return midLine;
+    }
+
     // If the current line is an empty blockquote line, it is a start line
     if (isEmptyBlockQuote(midLine.text)) {
         return midLine;
@@ -339,6 +344,11 @@ export function getStartLine(lineAtFunc: (line: number) => TextLine, midLine: Te
 
     // If the prev line is a ':::' fence, this line is the start
     if (isTripleColonFence(prevLine.text)) {
+        return midLine;
+    }
+
+    // If the prev line only contains an XML tag, this line is the start
+    if (isXmlTagOnly(prevLine.text)) {
         return midLine;
     }
 
@@ -390,6 +400,11 @@ export function getEndLine(lineAtFunc: (line: number) => TextLine, midLine: Text
         return midLine;
     }
 
+    // If the current line only contains an XML tag, it is an end point
+    if (isXmlTagOnly(midLine.text)) {
+        return midLine;
+    }
+
     // If the current line is an empty blockquote line, it is an end point
     if (isEmptyBlockQuote(midLine.text)) {
         return midLine;
@@ -420,6 +435,11 @@ export function getEndLine(lineAtFunc: (line: number) => TextLine, midLine: Text
 
     // If the next line is a ':::' fence, this line is the end
     if (isTripleColonFence(nextLine.text)) {
+        return midLine;
+    }
+
+    // If the next line only contains an XML tag, this line is the end
+    if (isXmlTagOnly(nextLine.text)) {
         return midLine;
     }
 
@@ -473,4 +493,9 @@ export function getSettings(wsConfig?: WorkspaceConfiguration): Settings {
 // Recognize MDX/admonition-style fences that start with ':::'
 export function isTripleColonFence(text: string): boolean {
     return /^\s*:::/.test(text);
+}
+
+// Recognize lines that only contain an opening or closing XML tag
+export function isXmlTagOnly(text: string): boolean {
+    return /^\s*<\/?[a-zA-Z][a-zA-Z0-9\-]*(?:\s[^>]*)?\/?>\s*$/.test(text);
 }
