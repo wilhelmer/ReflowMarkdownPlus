@@ -82,10 +82,11 @@ function lineStartsWithTripleColon(text: string): boolean {
   return TRIPLE_COLON_RE.test(text);
 }
 
-// Helper: lines that only contain an opening or closing XML tag
+// Helper: lines that only contain an opening or closing XML tag or HTML comment
 const XML_TAG_ONLY_RE = /^\s*<\/?[a-zA-Z][a-zA-Z0-9\-]*(?:\s[^>]*)?\/?>\s*$/;
+const HTML_COMMENT_ONLY_RE = /^\s*<!--.*?-->\s*$/;
 function lineIsXmlTagOnly(text: string): boolean {
-  return XML_TAG_ONLY_RE.test(text);
+  return XML_TAG_ONLY_RE.test(text) || HTML_COMMENT_ONLY_RE.test(text);
 }
 
 // Helper: Markdown footnote or reference definition lines, e.g. `[tags]: /path` or `[^1]: text`

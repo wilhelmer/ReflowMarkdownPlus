@@ -495,7 +495,9 @@ export function isTripleColonFence(text: string): boolean {
     return /^\s*:::/.test(text);
 }
 
-// Recognize lines that only contain an opening or closing XML tag
+// Recognize lines that only contain an opening or closing XML tag or HTML comment
 export function isXmlTagOnly(text: string): boolean {
-    return /^\s*<\/?[a-zA-Z][a-zA-Z0-9\-]*(?:\s[^>]*)?\/?>\s*$/.test(text);
+    const xmlTagRe = /^\s*<\/?[a-zA-Z][a-zA-Z0-9\-]*(?:\s[^>]*)?\/?>\s*$/;
+    const htmlCommentRe = /^\s*<!--.*?-->\s*$/;
+    return xmlTagRe.test(text) || htmlCommentRe.test(text);
 }

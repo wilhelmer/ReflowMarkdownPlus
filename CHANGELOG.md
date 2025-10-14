@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.0.3
+-----
+
+- Disable reflowing lines that only include HTML comments (`<!-- comment -->`).
+
 1.0.2
 -----
 
